@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+	xmlns:jaxws="http://cxf.apache.org/jaxws"
+	xsi:schemaLocation="
+     http://www.springframework.org/schema/beans
+     http://www.springframework.org/schema/beans/spring-beans.xsd
+     http://www.springframework.org/schema/tx
+     http://www.springframework.org/schema/tx/spring-tx.xsd
+     http://www.springframework.org/schema/context
+     http://www.springframework.org/schema/context/spring-context.xsd
+     http://www.springframework.org/schema/data/jpa http://www.springframework.org/schema/data/jpa/spring-jpa.xsd
+     http://cxf.apache.org/jaxws
+     http://cxf.apache.org/schemas/jaxws.xsd">
+
+	<!-- 
+		导入 CXF 提供的XML配置文件
+		3.1.4 没有cxf-extension-soap.xml，无需引入
+		cxf-servlet.xml可以不导入，内容为空；为了兼容性可以导入
+	 -->
+	<import resource="classpath:META-INF/cxf/cxf.xml"/>
+	<!-- <import resource="classpath:META-INF/cxf-extension-soap.xml"/>
+	<import resource="classpath:META-INF/cxf-servlet.xml"/> -->
+	
+	<!-- 
+		使用<jaxws:endpoint>元素来暴露Web Service
+		
+		implementor指定Web Service的服务提供者
+		支持两种方式（推荐第二种）：
+			1、直接给定服务器提供者的全类名。
+			2、设置为容器中的一个Bean。要在Bean的id前加上#，这是规定的
+		address指定暴露Web Service的服务地址，注意是相对地址，因为Web应用的ip和端口已经固定了
+		
+		综合web.xml的CXFServlet映射路径/webservice，该Web Service的wsdl路径：
+		http://localhost:8080/spring-cxf/webservice/hello?wsdl
+	 -->
+	<bean id="helloService"
+		class="com.hason.study.spring_cxf.webservice.impl.HelloWorldWebServiceImpl" />
+	<jaxws:endpoint
+		implementor="#helloService"
+		address="/hello" >
+	
+		<!-- 添加 In 拦截器 -->
+		<jaxws:inInterceptors >
+			<bean class="com.hason.study.spring_cxf.utils.MyAuthInterceptor" />
+		</jaxws:inInterceptors>
+		
+		<!-- 添加 Out 拦截器 -->
+		<jaxws:outInterceptors>
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"/>
+		</jaxws:outInterceptors>
+	
+	</jaxws:endpoint>
+		
+	
+	<!-- 自动扫描被注解的类，注册成Spring Bean -->
+	<!-- 这里排除 @Controller 注解的类，因为 @Controller 在Spring MVC配置文件sssp-servlet.xml中已经做了扫描 -->
+	<context:component-scan base-package="com.hason.study">
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+	</context:component-scan>
+
+</beans>
